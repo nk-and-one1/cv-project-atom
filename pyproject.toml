@@ -1,0 +1,9 @@
+[project]
+name = "expense-tracker"
+version = "0.1.0"
+description = "Personal expense tracker: ingest bank statements, categorize, pivot"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+include = ["expense_tracker*"]
