@@ -11,8 +11,8 @@ init_db()
 st.title("Expense Tracker")
 st.caption(f"Base currency: {BASE_CURRENCY}")
 
-tab_import, tab_pivot, tab_trends, tab_insights, tab_rules = st.tabs(
-    ["Import", "Pivot", "Trends", "Insights", "Rules"]
+tab_import, tab_pivot, tab_trends, tab_insights, tab_fx, tab_rules = st.tabs(
+    ["Import", "Pivot", "Trends", "Insights", "FX", "Rules"]
 )
 
 with tab_import:
@@ -30,6 +30,10 @@ with tab_trends:
 with tab_insights:
     from expense_tracker.ui.tabs.insights_tab import render as render_insights
     render_insights()
+
+with tab_fx:
+    from expense_tracker.ui.tabs.fx_tab import render as render_fx
+    render_fx()
 
 with tab_rules:
     from expense_tracker.ui.tabs.rules_tab import render as render_rules
