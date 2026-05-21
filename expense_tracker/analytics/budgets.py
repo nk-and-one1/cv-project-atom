@@ -27,14 +27,18 @@ def budget_vs_actual(transactions: pd.DataFrame, month: str) -> pd.DataFrame:
     df["month"] = df["date"].dt.to_period("M").astype(str)
     actuals = (
         df[df["month"] == month]
-        .groupby("category")["amount_base"]
+        .groupby("category_id")["amount_base"]
         .sum()
         .abs()
         .rename("actual")
+        .reset_index()
     )
-    out = budgets.rename(columns={"name": "category", "budget_monthly_base": "budget"}).merge(
-        actuals, on="category", how="left"
-    ).fillna({"actual": 0.0})
+    actuals["category_id"] = actuals["category_id"].astype("int64")
+    out = (
+        budgets.rename(columns={"name": "category", "budget_monthly_base": "budget"})
+        .merge(actuals, on="category_id", how="left")
+        .fillna({"actual": 0.0})
+    )
     out["remaining"] = out["budget"] - out["actual"]
     out["pct_used"] = (out["actual"] / out["budget"] * 100).round(1)
     return out[["category", "budget", "actual", "remaining", "pct_used"]]

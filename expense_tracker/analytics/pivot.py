@@ -8,7 +8,7 @@ from expense_tracker.db.connection import connect
 def load_transactions(account_ids: list[int] | None = None) -> pd.DataFrame:
     sql = """
         SELECT t.id, t.date, t.amount_native, t.currency, t.amount_base,
-               t.description, t.merchant, t.is_recurring, t.is_anomaly,
+               t.description, t.merchant, t.is_recurring, t.is_anomaly, t.category_id,
                COALESCE(p.name || ' > ' || c.name, c.name, 'Uncategorized') AS category,
                a.name AS account
         FROM transactions t

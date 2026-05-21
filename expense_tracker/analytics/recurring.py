@@ -29,4 +29,5 @@ def detect_recurring(df: pd.DataFrame, *, min_occurrences: int = 3, tolerance_da
             "occurrences": int(len(group)),
             "last_seen": group["date"].max(),
         })
-    return pd.DataFrame(rows).sort_values("avg_amount", ascending=False)
+    columns = ["merchant", "cadence_days", "avg_amount", "occurrences", "last_seen"]
+    return pd.DataFrame(rows, columns=columns).sort_values("avg_amount", ascending=False)
