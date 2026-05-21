@@ -5,6 +5,7 @@ import streamlit as st
 
 from expense_tracker.categorize.learn import propose_rule_from_correction, record_correction
 from expense_tracker.categorize.rules import add_rule, categorize_with_rules
+from expense_tracker.config import BASE_CURRENCY
 from expense_tracker.db.connection import connect, transaction
 
 
@@ -137,8 +138,31 @@ def render() -> None:
     finally:
         conn.close()
 
-    st.subheader("Categories")
-    st.dataframe(categories, use_container_width=True)
+    st.subheader("Categories & budgets")
+    st.caption(f"Set a monthly budget ({BASE_CURRENCY}) per category; leave blank for none. "
+               "Budget vs. actual shows on the Insights tab.")
+    edited_cats = st.data_editor(
+        categories.set_index("id"),
+        column_config={
+            "name": st.column_config.TextColumn("Category", disabled=True),
+            "budget_monthly_base": st.column_config.NumberColumn(
+                f"Monthly budget ({BASE_CURRENCY})", min_value=0.0, step=1000.0, format="%.2f"
+            ),
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="budget_editor",
+    )
+    if st.button("Save budgets"):
+        with transaction() as conn:
+            for cat_id, row in edited_cats.iterrows():
+                val = row["budget_monthly_base"]
+                conn.execute(
+                    "UPDATE categories SET budget_monthly_base = ? WHERE id = ?",
+                    (None if pd.isna(val) else float(val), int(cat_id)),
+                )
+        st.session_state["rules_flash"] = "Budgets saved."
+        st.rerun()
 
     st.subheader("Rules")
     if rules.empty:
