@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     name        TEXT NOT NULL,
     bank        TEXT NOT NULL,
     currency    TEXT NOT NULL,
+    number      TEXT UNIQUE,
     account_type TEXT,
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -24,15 +25,19 @@ CREATE TABLE IF NOT EXISTS rules (
     category_id              INTEGER NOT NULL REFERENCES categories(id),
     priority                 INTEGER NOT NULL DEFAULT 100,
     created_from_correction  INTEGER NOT NULL DEFAULT 0,
-    created_at               TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at               TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (pattern, category_id)
 );
 
 CREATE TABLE IF NOT EXISTS statements (
-    id          INTEGER PRIMARY KEY,
-    account_id  INTEGER NOT NULL REFERENCES accounts(id),
-    imported_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    source_file TEXT,
-    sha256      TEXT UNIQUE
+    id           INTEGER PRIMARY KEY,
+    account_id   INTEGER REFERENCES accounts(id),  -- nullable: a statement may span several accounts
+    bank         TEXT,
+    period_start TEXT,
+    period_end   TEXT,
+    imported_at  TEXT DEFAULT CURRENT_TIMESTAMP,
+    source_file  TEXT,
+    sha256       TEXT UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS fx_rates (
@@ -57,9 +62,10 @@ CREATE TABLE IF NOT EXISTS transactions (
     date                TEXT NOT NULL,
     amount_native       REAL NOT NULL,
     currency            TEXT NOT NULL,
-    amount_base         REAL NOT NULL,
+    amount_base         REAL,  -- nullable until an FX rate is available for non-base currencies
     description         TEXT NOT NULL,
     merchant            TEXT,
+    operation           TEXT,
     category_id         INTEGER REFERENCES categories(id),
     is_recurring        INTEGER NOT NULL DEFAULT 0,
     recurring_group_id  INTEGER REFERENCES recurring_groups(id),

@@ -28,3 +28,11 @@ INSERT OR IGNORE INTO categories (id, parent_id, name) VALUES
     (71, 70,   'Internal'),
     (72, 70,   'To others'),
     (99, NULL, 'Uncategorized');
+
+-- Starter merchant rules (generic; safe to edit/remove in the Rules tab).
+-- Matched case-insensitively against "merchant + description".
+INSERT OR IGNORE INTO rules (pattern, category_id, priority) VALUES
+    ('espresso|master ?coffee|\bcoffee\b|\bkofe|paris-brest|global coffee|coco kabanbay', 4, 50),
+    ('\bazs\b|qazaq oil', 11, 50),
+    ('yandex\.go|indriver|\bbolt\b', 12, 50),
+    ('claude\.ai|apple\.com|itunes|spotify|netflix|subscription', 41, 50);
