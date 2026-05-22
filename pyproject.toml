@@ -7,3 +7,6 @@ readme = "README.md"
 
 [tool.setuptools.packages.find]
 include = ["expense_tracker*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
