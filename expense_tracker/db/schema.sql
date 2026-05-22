@@ -47,14 +47,6 @@ CREATE TABLE IF NOT EXISTS fx_rates (
     PRIMARY KEY (date, currency)
 );
 
-CREATE TABLE IF NOT EXISTS recurring_groups (
-    id            INTEGER PRIMARY KEY,
-    merchant      TEXT NOT NULL,
-    cadence_days  INTEGER NOT NULL,
-    avg_amount    REAL,
-    last_seen     TEXT
-);
-
 CREATE TABLE IF NOT EXISTS transactions (
     id                  INTEGER PRIMARY KEY,
     account_id          INTEGER NOT NULL REFERENCES accounts(id),
@@ -67,10 +59,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     merchant            TEXT,
     operation           TEXT,
     category_id         INTEGER REFERENCES categories(id),
-    is_recurring        INTEGER NOT NULL DEFAULT 0,
-    recurring_group_id  INTEGER REFERENCES recurring_groups(id),
-    is_anomaly          INTEGER NOT NULL DEFAULT 0,
-    anomaly_score       REAL,
     raw_json            TEXT,
     dedup_hash          TEXT NOT NULL UNIQUE,
     created_at          TEXT DEFAULT CURRENT_TIMESTAMP

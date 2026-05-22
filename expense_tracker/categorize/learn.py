@@ -3,8 +3,6 @@
 import re
 import sqlite3
 
-from expense_tracker.categorize.rules import add_rule
-
 
 def record_correction(conn: sqlite3.Connection, transaction_id: int, new_category_id: int) -> None:
     old = conn.execute(
@@ -30,14 +28,3 @@ def propose_rule_from_correction(conn: sqlite3.Connection, transaction_id: int) 
     if not token:
         return None
     return re.escape(" ".join(token).lower())
-
-
-def apply_rule_retroactively(conn: sqlite3.Connection, pattern: str, category_id: int) -> int:
-    """Recategorize existing matching transactions when a new rule is added."""
-    cur = conn.execute(
-        "UPDATE transactions SET category_id = ? "
-        "WHERE category_id IS NULL "
-        "AND (LOWER(COALESCE(merchant,'') || ' ' || description) REGEXP ?)",
-        (category_id, pattern),
-    )
-    return cur.rowcount
