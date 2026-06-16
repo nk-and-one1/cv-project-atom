@@ -3,7 +3,7 @@
 import pandas as pd
 
 from expense_tracker.analytics.anomalies import flag_anomalies
-from expense_tracker.analytics.pivot import pivot_by_month
+from expense_tracker.analytics.pivot import income_by_month, pivot_by_month, spend_by_month
 from expense_tracker.analytics.recurring import detect_recurring
 
 RECURRING_COLS = ["merchant", "cadence_days", "avg_amount", "occurrences", "last_seen"]
@@ -106,3 +106,33 @@ def test_pivot_by_month_sums_with_totals():
     assert pv.loc["Food > Groceries", "2026-01"] == -150.0
     assert "Total" in pv.index
     assert "Total" in pv.columns
+
+
+def test_spend_by_month_shows_expenses_as_positive():
+    df = _df([
+        {"date": pd.Timestamp("2026-01-10"), "category": "Food > Groceries", "amount_base": -100.0},
+        {"date": pd.Timestamp("2026-01-20"), "category": "Food > Groceries", "amount_base": -50.0},
+        {"date": pd.Timestamp("2026-01-25"), "category": "Salary", "amount_base": 500000.0},
+    ])
+    pv = spend_by_month(df)
+    assert pv.loc["Food > Groceries", "2026-01"] == 150.0  # magnitude, not -150
+    assert "Salary" not in pv.index  # income excluded from spend view
+
+
+def test_income_by_month_keeps_only_positive():
+    df = _df([
+        {"date": pd.Timestamp("2026-01-25"), "category": "Salary", "amount_base": 500000.0},
+        {"date": pd.Timestamp("2026-01-10"), "category": "Food > Groceries", "amount_base": -100.0},
+    ])
+    pv = income_by_month(df)
+    assert pv.loc["Salary", "2026-01"] == 500000.0
+    assert "Food > Groceries" not in pv.index
+
+
+def test_spend_and_income_empty_paths():
+    assert spend_by_month(pd.DataFrame(columns=["date", "category", "amount_base"])).empty
+    assert income_by_month(pd.DataFrame(columns=["date", "category", "amount_base"])).empty
+    income_only = _df([
+        {"date": pd.Timestamp("2026-01-25"), "category": "Salary", "amount_base": 500000.0},
+    ])
+    assert spend_by_month(income_only).empty  # no expense rows -> empty spend table

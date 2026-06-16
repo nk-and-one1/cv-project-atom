@@ -44,3 +44,29 @@ def pivot_by_month(df: pd.DataFrame) -> pd.DataFrame:
         margins=True,
         margins_name="Total",
     )
+
+
+def spend_by_month(df: pd.DataFrame) -> pd.DataFrame:
+    """Expense rows only (amount_base < 0), shown as positive magnitudes.
+
+    Amounts are stored signed — expenses negative, income positive — so a
+    spend view reads more naturally with the sign flipped. Unpriced rows
+    (amount_base NULL) drop out, as they can't be summed in the base currency.
+    """
+    if df.empty:
+        return df
+    spend = df[df["amount_base"] < 0].copy()
+    if spend.empty:
+        return spend
+    spend["amount_base"] = spend["amount_base"].abs()
+    return pivot_by_month(spend)
+
+
+def income_by_month(df: pd.DataFrame) -> pd.DataFrame:
+    """Income rows only (amount_base > 0), already positive."""
+    if df.empty:
+        return df
+    income = df[df["amount_base"] > 0].copy()
+    if income.empty:
+        return income
+    return pivot_by_month(income)
