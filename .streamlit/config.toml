@@ -1,0 +1,11 @@
+# Streamlit configuration. The [theme] section restyles the whole app —
+# edit any value and restart `streamlit run` to see it. Full reference:
+# https://docs.streamlit.io/develop/api-reference/configuration/config.toml
+
+[theme]
+base = "light"
+primaryColor = "#0E7C66"              # buttons, links, slider, active tab, st.button(type="primary")
+backgroundColor = "#FFFFFF"           # main canvas
+secondaryBackgroundColor = "#F1F4F3"  # tables, sidebar, widget fills
+textColor = "#16241F"
+font = "sans serif"

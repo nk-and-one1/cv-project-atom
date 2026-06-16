@@ -4,6 +4,7 @@ from expense_tracker.analytics.anomalies import flag_anomalies
 from expense_tracker.analytics.budgets import budget_vs_actual
 from expense_tracker.analytics.pivot import load_transactions
 from expense_tracker.analytics.recurring import detect_recurring
+from expense_tracker.ui.format import money
 
 
 def render() -> None:
@@ -25,17 +26,15 @@ def render() -> None:
 
     st.subheader("Recurring transactions")
     recurring = detect_recurring(df)
-    st.dataframe(recurring, use_container_width=True)
+    st.dataframe(money(recurring, ["avg_amount"]), use_container_width=True)
 
     st.subheader("Anomalies")
     anomalies = flag_anomalies(df)
-    st.dataframe(
-        anomalies[["date", "category", "merchant", "amount_base", "anomaly_score"]]
-        if not anomalies.empty else anomalies,
-        use_container_width=True,
-    )
+    anomaly_cols = ["date", "category", "merchant", "amount_base", "anomaly_score"]
+    anomaly_view = anomalies[anomaly_cols] if not anomalies.empty else anomalies
+    st.dataframe(money(anomaly_view, ["amount_base"]), use_container_width=True)
 
     st.subheader("Budget vs actual (current month)")
     current_month = df["date"].max().strftime("%Y-%m")
     bva = budget_vs_actual(df, current_month)
-    st.dataframe(bva, use_container_width=True)
+    st.dataframe(money(bva, ["budget", "actual", "remaining"]), use_container_width=True)

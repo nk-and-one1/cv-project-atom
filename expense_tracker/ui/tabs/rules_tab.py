@@ -7,6 +7,7 @@ from expense_tracker.categorize.learn import propose_rule_from_correction, recor
 from expense_tracker.categorize.rules import add_rule, categorize_with_rules
 from expense_tracker.config import BASE_CURRENCY
 from expense_tracker.db.connection import connect, transaction
+from expense_tracker.ui.format import MONEY_COLUMN_FORMAT
 
 
 def _category_options(conn: sqlite3.Connection) -> dict[str, int]:
@@ -146,7 +147,8 @@ def render() -> None:
         column_config={
             "name": st.column_config.TextColumn("Category", disabled=True),
             "budget_monthly_base": st.column_config.NumberColumn(
-                f"Monthly budget ({BASE_CURRENCY})", min_value=0.0, step=1000.0, format="%.2f"
+                f"Monthly budget ({BASE_CURRENCY})",
+                min_value=0.0, step=1000.0, format=MONEY_COLUMN_FORMAT,
             ),
         },
         hide_index=True,

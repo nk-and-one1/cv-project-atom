@@ -5,6 +5,7 @@ import streamlit as st
 
 from expense_tracker.ingest.pipeline import ingest, reconcile
 from expense_tracker.parsers import KNOWN_BANKS, get_parser
+from expense_tracker.ui.format import money
 
 
 def _format_accounts(accounts) -> str:
@@ -63,8 +64,9 @@ def render() -> None:
         st.warning(f"Reconciliation: {warning}")
 
     df = pd.DataFrame(t.model_dump() for t in parsed.transactions)
+    preview = df[["date", "amount_native", "currency", "operation", "description"]]
     st.dataframe(
-        df[["date", "amount_native", "currency", "operation", "description"]],
+        money(preview, ["amount_native"]),
         use_container_width=True, hide_index=True,
     )
 

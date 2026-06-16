@@ -3,7 +3,12 @@
 import pandas as pd
 
 from expense_tracker.analytics.anomalies import flag_anomalies
-from expense_tracker.analytics.pivot import pivot_by_month
+from expense_tracker.analytics.pivot import (
+    income_by_month,
+    pivot_by_month,
+    spend_by_month,
+    to_hierarchical,
+)
 from expense_tracker.analytics.recurring import detect_recurring
 
 RECURRING_COLS = ["merchant", "cadence_days", "avg_amount", "occurrences", "last_seen"]
@@ -106,3 +111,84 @@ def test_pivot_by_month_sums_with_totals():
     assert pv.loc["Food > Groceries", "2026-01"] == -150.0
     assert "Total" in pv.index
     assert "Total" in pv.columns
+
+
+def test_spend_by_month_shows_expenses_as_positive():
+    df = _df([
+        {"date": pd.Timestamp("2026-01-10"), "category": "Food > Groceries", "amount_base": -100.0},
+        {"date": pd.Timestamp("2026-01-20"), "category": "Food > Groceries", "amount_base": -50.0},
+        {"date": pd.Timestamp("2026-01-25"), "category": "Salary", "amount_base": 500000.0},
+    ])
+    pv = spend_by_month(df)
+    assert pv.loc["Food > Groceries", "2026-01"] == 150.0  # magnitude, not -150
+    assert "Salary" not in pv.index  # income excluded from spend view
+
+
+def test_income_by_month_keeps_only_positive():
+    df = _df([
+        {"date": pd.Timestamp("2026-01-25"), "category": "Salary", "amount_base": 500000.0},
+        {"date": pd.Timestamp("2026-01-10"), "category": "Food > Groceries", "amount_base": -100.0},
+    ])
+    pv = income_by_month(df)
+    assert pv.loc["Salary", "2026-01"] == 500000.0
+    assert "Food > Groceries" not in pv.index
+
+
+def test_spend_and_income_empty_paths():
+    assert spend_by_month(pd.DataFrame(columns=["date", "category", "amount_base"])).empty
+    assert income_by_month(pd.DataFrame(columns=["date", "category", "amount_base"])).empty
+    income_only = _df([
+        {"date": pd.Timestamp("2026-01-25"), "category": "Salary", "amount_base": 500000.0},
+    ])
+    assert spend_by_month(income_only).empty  # no expense rows -> empty spend table
+
+
+# --- hierarchical presentation --------------------------------------------
+
+INDENT = " " * 4
+
+
+def test_to_hierarchical_groups_children_under_parent():
+    pv = pd.DataFrame(
+        {"2026-01": [100.0, 50.0, 30.0]},
+        index=pd.Index(["Food > Groceries", "Food > Restaurants", "Salary"], name="category"),
+    )
+    out = to_hierarchical(pv)
+    assert list(out.index) == [
+        "Food",
+        f"{INDENT}Groceries",
+        f"{INDENT}Restaurants",
+        "Salary",
+    ]
+    assert out.loc["Food", "2026-01"] == 150.0  # rollup of children
+    assert out.loc["Salary", "2026-01"] == 30.0  # standalone parent unchanged
+
+
+def test_to_hierarchical_handles_direct_plus_children():
+    # 'Food' has a direct entry AND children — keep the direct portion visible.
+    pv = pd.DataFrame(
+        {"2026-01": [20.0, 100.0, 50.0]},
+        index=pd.Index(["Food", "Food > Groceries", "Food > Restaurants"], name="category"),
+    )
+    out = to_hierarchical(pv)
+    assert list(out.index) == [
+        "Food",
+        f"{INDENT}(direct)",
+        f"{INDENT}Groceries",
+        f"{INDENT}Restaurants",
+    ]
+    assert out.loc["Food", "2026-01"] == 170.0  # 20 (direct) + 100 + 50
+
+
+def test_to_hierarchical_preserves_total_row_at_bottom():
+    pv = pd.DataFrame(
+        {"2026-01": [100.0, 50.0, 150.0]},
+        index=pd.Index(["Food > Groceries", "Food > Restaurants", "Total"], name="category"),
+    )
+    out = to_hierarchical(pv)
+    assert list(out.index)[-1] == "Total"
+    assert out.loc["Total", "2026-01"] == 150.0
+
+
+def test_to_hierarchical_empty_passthrough():
+    assert to_hierarchical(pd.DataFrame()).empty

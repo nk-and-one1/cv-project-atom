@@ -6,6 +6,7 @@ import streamlit as st
 from expense_tracker.config import BASE_CURRENCY
 from expense_tracker.db.connection import connect
 from expense_tracker.fx.rates import list_rates, reprice, set_rate
+from expense_tracker.ui.format import RATE, style
 
 
 def _awaiting_fx() -> list[dict]:
@@ -56,6 +57,9 @@ def render() -> None:
     st.subheader("Stored rates")
     rates = list_rates()
     if rates:
-        st.dataframe(pd.DataFrame(rates), use_container_width=True, hide_index=True)
+        st.dataframe(
+            style(pd.DataFrame(rates), {"rate_to_base": RATE}),
+            use_container_width=True, hide_index=True,
+        )
     else:
         st.info("No rates yet — add one above.")
