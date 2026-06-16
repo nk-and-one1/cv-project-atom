@@ -1,6 +1,11 @@
 import streamlit as st
 
-from expense_tracker.analytics.pivot import income_by_month, load_transactions, spend_by_month
+from expense_tracker.analytics.pivot import (
+    income_by_month,
+    load_transactions,
+    spend_by_month,
+    to_hierarchical,
+)
 from expense_tracker.config import BASE_CURRENCY
 
 
@@ -12,15 +17,18 @@ def render() -> None:
         return
 
     st.subheader("Spend by category")
-    st.caption(f"Expenses shown as positive amounts, in {BASE_CURRENCY}.")
-    spend = spend_by_month(df)
+    st.caption(
+        f"Expenses shown as positive amounts, in {BASE_CURRENCY}. "
+        "Parent rows are rolled up from their sub-categories."
+    )
+    spend = to_hierarchical(spend_by_month(df))
     if spend.empty:
         st.info("No expenses recorded yet.")
     else:
         st.dataframe(spend, use_container_width=True)
 
     st.subheader("Income")
-    income = income_by_month(df)
+    income = to_hierarchical(income_by_month(df))
     if income.empty:
         st.info("No income recorded yet.")
     else:

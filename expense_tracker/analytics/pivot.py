@@ -70,3 +70,53 @@ def income_by_month(df: pd.DataFrame) -> pd.DataFrame:
     if income.empty:
         return income
     return pivot_by_month(income)
+
+
+def to_hierarchical(pv: pd.DataFrame, indent: str = " " * 4) -> pd.DataFrame:
+    """Re-order a flat 'Parent > Child' pivot into a Word-style hierarchy.
+
+    Parent rows show a rollup of (any direct parent rows + all children).
+    Children are indented beneath their parent with a non-breaking-space
+    prefix so the indent survives HTML rendering. A 'Total' margin row,
+    if present, is preserved at the bottom.
+    """
+    if pv.empty:
+        return pv
+
+    total_row = pv.loc[["Total"]] if "Total" in pv.index else None
+    rows = pv.drop(index="Total", errors="ignore")
+
+    parents: dict[str, dict] = {}
+    for label, row in rows.iterrows():
+        if " > " in label:
+            parent, child = label.split(" > ", 1)
+        else:
+            parent, child = label, None
+        bucket = parents.setdefault(parent, {"direct": None, "children": []})
+        if child is None:
+            bucket["direct"] = row
+        else:
+            bucket["children"].append((child, row))
+
+    labels: list[str] = []
+    data: list[pd.Series] = []
+    for parent in sorted(parents):
+        bucket = parents[parent]
+        rollup = pd.Series(0.0, index=pv.columns)
+        if bucket["direct"] is not None:
+            rollup = rollup.add(bucket["direct"], fill_value=0)
+        for _, child_row in bucket["children"]:
+            rollup = rollup.add(child_row, fill_value=0)
+        labels.append(parent)
+        data.append(rollup)
+        if bucket["direct"] is not None and bucket["children"]:
+            labels.append(f"{indent}(direct)")
+            data.append(bucket["direct"])
+        for child_name, child_row in sorted(bucket["children"]):
+            labels.append(f"{indent}{child_name}")
+            data.append(child_row)
+
+    result = pd.DataFrame(data, index=pd.Index(labels, name=pv.index.name))
+    if total_row is not None:
+        result = pd.concat([result, total_row])
+    return result
