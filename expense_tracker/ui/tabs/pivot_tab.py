@@ -7,6 +7,7 @@ from expense_tracker.analytics.pivot import (
     to_hierarchical,
 )
 from expense_tracker.config import BASE_CURRENCY
+from expense_tracker.ui.format import money_pivot
 
 
 def render() -> None:
@@ -25,11 +26,11 @@ def render() -> None:
     if spend.empty:
         st.info("No expenses recorded yet.")
     else:
-        st.dataframe(spend, use_container_width=True)
+        st.dataframe(money_pivot(spend), use_container_width=True)
 
     st.subheader("Income")
     income = to_hierarchical(income_by_month(df))
     if income.empty:
         st.info("No income recorded yet.")
     else:
-        st.dataframe(income, use_container_width=True)
+        st.dataframe(money_pivot(income), use_container_width=True)
